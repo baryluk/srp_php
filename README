@@ -1,0 +1,44 @@
+Secure Remote Password protocol.
+
+This is simple MySQL + PHP application which also uses JavaScript,
+to perform two-way auhentication.
+
+Features:
+  It is secure for both sides.
+  It do not need certificates or certification authorities
+   (beside initial account creation, which is almost always
+    safer than day-to-day usage, and can be done using
+    secondary channels, like telephone, or other system).
+  It is brute-force and replay attack resilent.
+  It establishes strong common session encryption key.
+  It makes offline attacks almost impossible.
+  It do not store plain text passwords on tht database,
+    and database cannot be used even break into the same system
+    or systems with same login / password pairs.
+  It do not leak any informations to the not trusted servers,
+    and to not trusted users.
+
+It is better than plain text passwords, it is better than hashed
+passwords, it is better than salted passwords, it is better than
+chalenge-response schemes, it is better than Diffie-Helman authentification,
+it is better than public key systems. One of the best cryptographic
+protocols ever.
+
+We use SHA-256 (and its -HMAC version) as basic cryptographic primitive,
+and use GMP (GNU Multiprecission library) for PHP to perform
+large number arithmetic. We use scrypt-inspired key derivation
+(password strenghtening) from password.
+
+It is just a proof of concept, good for didactic purposes.
+Do not use in production systems. Can contain bugs,
+as well can be vorunable to side-channel attacks using time based
+methods. It also do not solve how client-side code is distributed
+to the client (probably using SSL based HTTP, with trusted
+certificates, for example on trusted third-party server).
+
+Please rather vote for a native TLS-SRP support in
+browsers: Mozilla Firefox, Chromium, Opera, etc.,
+and libraries: OpenSSL, GNUTLS, NSS.
+
+Copytright: Witold Baryluk, June 2009
+

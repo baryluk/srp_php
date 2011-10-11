@@ -1,0 +1,148 @@
+SRP-6 (jest to zoptymalizowany SRP-3, który używa mniej pakietów w obie strony)
+
+standardy:
+
+draft-wu-srp-auth-04.txt (RFC 2945), RFC 2944
+draft-ietf-tls-srp-15.txt (RFC 5054)
+draft-burdis-cat-srp-sasl-03.txt
+draft-ietf-pppext-eap-srp-00.txt
+draft-ietf-cat-srpgm-02.txt
+draft-nisse-secsh-srp-00.txt
+draft-tsiang-srp-03.txt (RFC 2892), cos innego "Spatial Reuse Protocol"
+draft-varjonen-hip-srp-00.txt
+
+http://grouper.ieee.org/groups/1363/
+
+Even so-called "challenge-response" techniques like the one
+described in [RFC 2095] and [RFC 1760], which are designed to defeat
+simple sniffing attacks, can be compromised by what is known as a
+"dictionary attack".
+
+Powyższy problem można rozwiązać używając powolnej funkcji hashującej,
+jak PBDKF2, bcrypt lub scrypt.
+
+Jak wygenerować hasło, rozsądnie:
+echo -n | ./scrypt enc /dev/stdin | sha256sum
+To nie działa, bo IV jest randomowe.
+
+ Earlier versions of the SRP mechanism used the MD5 hash function,
+    described in [RFC 1321].  Keyed hash transforms are also recommended
+       for use with SRP; one possible construction uses HMAC [RFC 2104],
+          using K to key the hash in each direction instead of concatenating it
+             with the other parameters.
+
+Definicje:
+
+Definiujemy H(x) = scrypt(x, 2^16, 8, 1) lub inną funkcję
+hashująca która zabiera dużo czasu.
+
+Faza 0: ustawienie bazy
+
+Username I
+Bierzemy hasło P, i przesyłamy bezpiecznie na serwer.
+Lub generujem jest bezpiecznie na serwerze i wysyłamy bezpiecznie do klienta.
+
+Na serwerze generujemy losową sól s
+
+Obliczamy, x = H(s~I~P)
+
+Na serwerze wyliczamy N (rozmiar grupy) oraz g (generator grupy N).
+
+Wyliczamy v = g^x
+
+Obliczamy k = H(N~g) w SRP-6a, lub przymujemy k = 3 dla starego SRP-6
+
+zapisujemy do bazy (I, N, g, s, v, k)
+
+
+Faza 1:
+
+1. Client wysyła do serwera username I
+
+2. Serwer sprawdza bazie danych, i odsyła s do clienta
+
+Faza 2:
+
+3. Client oblicza x = H(s~I~P)
+
+Faza 3:
+
+4. Client generuje randomową liczbę a
+
+5. Client oblicza A = g^a
+
+6. Client wysyła A do serwera
+
+7. Serwer czeka aż A zostanie przesłane
+
+7a. Jeśli A == 0 (mod N), serwer przerywa transmisje
+
+8. Serwer generuje randomową liczbę b
+
+9. Następnie serwer oblicza B = k*v + g^b
+
+10. Nastepnie wylicza u = H(A~B)
+
+11. Serwer wysyła B do clienta
+
+12a. Jeśli B == 0 (mod N), klient przerywa transmisje.
+
+12b. Client oblicza u = H(A~B)
+
+12c. Jeśli u == 0, klient prerywa transmisje
+
+Faza 4
+
+13. Client oblicza S = (B - k*g^x)^(a+ux)
+
+//// Uwaga: (B - 3*g^x)^(a+ux) = (k*v + g^b - k*g^x)^(a+ux) = g^b^(a+ux) = g^(ba)*g^(bux)
+
+14. Serwer oblicza S = (A*v^u)^b
+
+//// Uwaga: (A*v^u)^b = (g^a*g^(xu))^b = g^(ab)*g^(bux)
+
+Faza 5
+
+15. Client oblicza M1 = H(A~B~S) (A ma swoje, B otrzymał, S obliczył)
+
+16. Client wysyła M1 do serwera
+
+17. Serwer oblicza M1 = H(A~B~S)  (B ma swoje, A ma swoje, S obliczył)
+
+18. Serwer sprawdza poprawność prezsłanego M1 ze swoim.
+
+
+Faza 6
+
+19. Serwer oblicza M2 = H(A~M1~S)
+
+20. Serwer wysyła M2 do clienta
+
+
+21. Client oblicza M2 = H(A~M1~S)
+
+22. Client sprawdza poprawność przesłanego M2 ze swoim.
+
+Faza 7
+
+23. Client oblicza K = H(S)
+
+24. Serwer oblicza K = H(S)
+
+26. Obie stronu używają K jako silny klucz sesyjny
+
+
+Faza 8. moja inwencja
+
+27. Teraz potwierdzamy że nasze klucze są poprawne:
+
+28. Client oblicza M = H( (H(N) xor H(g))~H(I)~s~A~B~K )
+
+29. Client wysyła M do serwera
+
+30. Serwer czeka aż M zostnaie przesłane z klienta
+
+31. Serwera oblicza Z = H(A~M~K)
+
+32. Serwer wysyła Z do klienta
+
