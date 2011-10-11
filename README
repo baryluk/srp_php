@@ -42,3 +42,12 @@ and libraries: OpenSSL, GNUTLS, NSS.
 
 Copytright: Witold Baryluk, June 2009
 
+
+Links:
+  http://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+  http://srp.stanford.edu/
+  http://tools.ietf.org/html/rfc2945
+  http://tools.ietf.org/html/rfc5054
+  http://grouper.ieee.org/groups/1363/
+  http://en.wikipedia.org/wiki/TLS-SRP
+  http://trustedhttp.org/ patches for libs (GnuTLS, OpenSSL, NSS, Python), servers (apache), and clients (curl, Firefox, Chrome)
